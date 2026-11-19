@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Triángulos</title>
+<style>
+* { box-sizing: border-box; }
+body { margin: 0; color: #272521; background: #f4eee2; font: 1rem/1.5 system-ui, sans-serif; }
+main { max-width: 37rem; margin: auto; padding: clamp(1rem, 5vw, 2.5rem); }
+h1 { font: bold clamp(2.6rem, 10vw, 4.5rem)/1 Georgia, serif; margin: .15em 0; }
+p { margin: .65rem 0; }
+.red { --ink: #a92333; --fill: #f6ced1; }
+.blue { --ink: #174f95; --fill: #d0e1f7; }
+.scores, .controls { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .55rem; }
+.scores { margin: 1.25rem 0 .65rem; }
+.score { color: var(--ink); background: var(--fill); border-radius: .5rem; padding: .4rem .8rem; font-weight: 750; }
+#status { font-weight: 750; }
+#reset { min-height: 44px; padding: .35rem .8rem; border: 1px solid #887f73; border-radius: .45rem; background: #fffaf0; color: inherit; font: inherit; cursor: pointer; }
+#board { position: relative; isolation: isolate; margin-top: .8rem; aspect-ratio: 1; background: #fffaf0; border: 1px solid #d2c6b2; border-radius: 1rem; }
+.dot, .edge, .token { position: absolute; }
+.dot, .token { transform: translate(-50%, -50%); pointer-events: none; }
+.dot { z-index: 3; width: clamp(6px, 2vw, 11px); aspect-ratio: 1; background: #322e29; border-radius: 50%; }
+.edge { z-index: 2; height: 8%; transform: translate(-50%, -50%) rotate(var(--angle)); border: 0; border-radius: .35rem; background: transparent; padding: 0; }
+.edge::after { content: ''; position: absolute; left: -10%; right: -10%; top: 50%; transform: translateY(-50%); height: 0; border-top: 2px dashed #958779; }
+.edge:enabled { cursor: pointer; }
+.edge:enabled:hover::after, .edge:focus-visible::after { border-top: 4px solid #54483a; }
+.edge.claimed::after { border-top: 4px solid var(--ink); }
+.edge:disabled { pointer-events: none; }
+.face { position: absolute; inset: 0; pointer-events: none; background: var(--fill, transparent); }
+.token { z-index: 1; color: var(--ink); font-weight: 800; }
+:focus-visible { outline: 2px solid #41291a; outline-offset: 1px; }
+</style>
+</head>
+<body>
+<main>
+<nav aria-label="Navegación"><a href="index.html" style="display:inline-block;padding:10px 0;color:inherit">Volver a Juegos para pensar</a></nav>
+  <h1>Triángulos</h1>
+  <p>De a dos y por turnos, hagan clic en una línea punteada para unir dos puntos vecinos. Cada triángulo pequeño que cierren con ese trazo vale un punto, aunque sus lados sean de distintos colores.</p>
+  <p>Después de cada jugada cambia el turno. Gana quien tenga más puntos cuando se ocupa el último lado.</p>
+  <div class="scores" aria-label="Puntajes">
+    <span class="score red">Rojo <output id="red-score">0</output></span>
+    <span class="score blue">Azul <output id="blue-score">0</output></span>
+  </div>
+  <div class="controls">
+    <span id="status" role="status"></span>
+    <button id="reset" type="button">Reiniciar partida</button>
+  </div>
+  <div id="board" role="group" aria-label="Tablero triangular"></div>
+</main>
+<script>
+(() => {
+  const board = document.querySelector('#board');
+  const announcement = document.querySelector('#status');
+  const scores = { red: 0, blue: 0 };
+  const names = { red: 'Rojo', blue: 'Azul' };
+  const edges = new Map();
+  const faces = [];
+  const rows = [];
+  const lastRow = 5;
+  const spacing = 16;
+  let turn;
+  let remaining;
+
+  function place(element, x, y) {
+    element.style.left = x + '%';
+    element.style.top = y + '%';
+  }
+
+  function edgeFor(a, b) {
+    const key = Math.min(a.id, b.id) + '-' + Math.max(a.id, b.id);
+    if (edges.has(key)) return edges.get(key);
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'edge';
+    button.style.width = (spacing / 1.2) + '%';
+    button.style.setProperty('--angle', Math.atan2(b.y - a.y, b.x - a.x) + 'rad');
+    button.setAttribute('aria-label', 'Unir ' + a.label + ' con ' + b.label);
+    place(button, (a.x + b.x) / 2, (a.y + b.y) / 2);
+    const edge = { button, faces: [], color: null };
+    edges.set(key, edge);
+    button.addEventListener('click', () => play(edge));
+    board.append(button);
+    return edge;
+  }
+
+  function addTriangle(a, b, c) {
+    const sides = [edgeFor(a, b), edgeFor(b, c), edgeFor(c, a)];
+    const fill = document.createElement('span');
+    fill.style.clipPath = 'polygon(' + [a, b, c].map(point => point.x + '% ' + point.y + '%').join(', ') + ')';
+    const token = document.createElement('span');
+    token.className = 'token';
+    token.setAttribute('aria-hidden', 'true');
+    place(token, (a.x + b.x + c.x) / 3, (a.y + b.y + c.y) / 3);
+    const face = { sides, fill, token };
+    faces.push(face);
+    for (const side of sides) side.faces.push(face);
+    board.append(fill, token);
+  }
+
+  let id = 0;
+  for (let row = 0; row <= lastRow; row++) {
+    const nodes = [];
+    for (let column = 0; column <= row; column++) {
+      const x = 50 + spacing * (column - row / 2);
+      const y = 15 + row * spacing * Math.sqrt(3) / 2;
+      const dot = document.createElement('span');
+      dot.className = 'dot';
+      place(dot, x, y);
+      board.append(dot);
+      nodes.push({ x, y, id: id++, label: 'fila ' + (row + 1) + ', punto ' + (column + 1) });
+    }
+    rows.push(nodes);
+  }
+  for (let row = 0; row < lastRow; row++) {
+    for (let column = 0; column <= row; column++) {
+      addTriangle(rows[row][column], rows[row + 1][column], rows[row + 1][column + 1]);
+      if (column < row) addTriangle(rows[row][column], rows[row][column + 1], rows[row + 1][column + 1]);
+    }
+  }
+
+  function render(message) {
+    for (const color of Object.keys(scores)) {
+      document.querySelector('#' + color + '-score').textContent = scores[color];
+    }
+    announcement.textContent = message;
+  }
+
+  function play(edge) {
+    if (edge.color || !remaining) return;
+    edge.color = turn;
+    edge.button.classList.add('claimed', turn);
+    edge.button.disabled = true;
+    remaining--;
+    let points = 0;
+    for (const face of edge.faces) {
+      if (!face.sides.every(side => side.color)) continue;
+      points++;
+      face.fill.className = 'face ' + turn;
+      face.token.className = 'token ' + turn;
+      face.token.textContent = names[turn][0];
+    }
+    scores[turn] += points;
+    if (!remaining) {
+      const winner = scores.red > scores.blue ? 'Rojo' : 'Azul';
+      render('¡Ganó ' + winner + '! ' + scores.red + ' a ' + scores.blue + ' (Rojo–Azul).');
+      document.querySelector('#reset').focus();
+      return;
+    }
+    const update = points ? names[turn] + ' suma ' + points + (points === 1 ? ' punto. ' : ' puntos. ') : '';
+    turn = turn === 'red' ? 'blue' : 'red';
+    render(update + 'Turno de ' + names[turn] + '.');
+    if (document.activeElement === document.body) {
+      [...edges.values()].find(side => !side.color).button.focus();
+    }
+  }
+
+  function reset() {
+    scores.red = scores.blue = 0;
+    turn = 'red';
+    remaining = edges.size;
+    for (const { button } of edges.values()) {
+      button.classList.remove('claimed', 'red', 'blue');
+      button.disabled = false;
+    }
+    for (const edge of edges.values()) edge.color = null;
+    for (const { fill, token } of faces) {
+      fill.className = 'face';
+      token.className = 'token';
+      token.textContent = '';
+    }
+    render('Turno de Rojo.');
+  }
+
+  document.querySelector('#reset').addEventListener('click', reset);
+  reset();
+})();
+</script>
+</body>
+</html>

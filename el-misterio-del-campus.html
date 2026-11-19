@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>El misterio del campus</title>
+<style>
+:root { color-scheme: light; --font-size-base: 16px; --foreground: #242221; --muted: #685d51; --green: #214c40; }
+* { box-sizing: border-box; }
+body { margin: 0; background: #f3ede1; color: var(--foreground); font: 1rem/1.55 system-ui, sans-serif; }
+main { width: min(100% - 2rem, 64rem); margin: clamp(1rem, 4vw, 3rem) auto; padding: clamp(1rem, 4vw, 3rem); background: #fffcf5; border: 1px solid #d8ccba; border-radius: 1rem; }
+h1, h2, p { margin: 0; }
+h1, h2 { font-family: Georgia, serif; color: var(--green); line-height: 1.12; }
+h1 { font-size: clamp(2.25rem, 6vw, 4rem); }
+h2 { font-size: 1.55rem; }
+hr { border: 0; border-top: 1px solid #d8ccba; }
+summary { cursor: pointer; color: var(--green); font-weight: 650; }
+table { border-collapse: collapse; font-size: .94rem; }
+caption { font-weight: 700; padding-block: .4rem; }
+th, td { border-bottom: 1px solid #e3d9ca; padding-block: .25rem; }
+.form-label { display: grid; gap: .35rem; font-weight: 650; }
+button, select { font: inherit; border: 1px solid #a79d90; border-radius: .5rem; background: #fffdfa; color: inherit; min-height: 44px; padding: .45rem .75rem; }
+select { width: 100%; }
+button { cursor: pointer; }
+button:hover { filter: brightness(.94); }
+button.btn-primary { background: var(--green); border-color: var(--green); color: white; }
+button.btn-ghost { background: transparent; }
+:focus-visible { outline: 3px solid #9b441b; outline-offset: 2px; }
+.viz-row { display: flex; flex-wrap: wrap; gap: .5rem; }
+.text-small { font-size: .85rem; }
+.text-muted { color: var(--muted); }
+.resultado:empty { display: none; }
+.resultado { font-weight: 650; }
+#misterio-campus header { padding-inline-end: 0 !important; }
+</style>
+</head>
+<body>
+<main>
+<nav aria-label="Navegación"><a href="index.html" style="display:inline-block;padding:10px 0;color:inherit">Volver a Juegos para pensar</a></nav>
+<div id="misterio-campus">
+  <header>
+    <h1>El misterio del campus</h1>
+    <p>Encontraron muerto al jefe de grupo en la Universidad de la Deducción. Cada sospechoso estaba en un lugar distinto y llevaba un objeto diferente. Descubrí quién fue, dónde y con qué.</p>
+  </header>
+  <div class="expediente">
+    <section>
+      <h2>Expediente</h2>
+      <ul>
+        <li><strong>Alcalde Miel</strong> · Zurdo, ojos avellana.</li>
+        <li><strong>Decano Glauco</strong> · Diestro, ojos marrones.</li>
+        <li><strong>Rectora Toscana</strong> · Zurda, ojos verdes.</li>
+      </ul>
+      <ul>
+        <li><strong>Estadio</strong> · Al aire libre.</li>
+        <li><strong>Librería</strong> · Vende libros de texto.</li>
+        <li><strong>Antigua sede</strong> · Tiene paredes con pintura descascarada.</li>
+      </ul>
+      <p><strong>Objetos</strong> · Un lápiz afilado, una mochila pesada para los libros y un cordón de graduación.</p>
+    </section>
+    <section>
+      <h2>Pistas</h2>
+      <ol>
+        <li>La persona que estaba en el estadio era diestra.</li>
+        <li>Quien llevaba el lápiz le guardaba rencor a otra persona, que estaba en la antigua sede.</li>
+        <li>Quien llevaba el cordón tenía ojos color avellana.</li>
+        <li>El decano Glauco iba cargado con libros de texto.</li>
+        <li>Junto al cuerpo había una pared con pintura descascarada.</li>
+      </ol>
+      <details>
+        <summary>Ver una ayuda</summary>
+        <p>Empezá por el estadio. Solo una de las tres personas es diestra.</p>
+      </details>
+    </section>
+  </div>
+  <hr>
+  <section>
+    <h2>Cuaderno de deducción</h2>
+    <p>Hacé clic en una casilla para pasar de <strong>·</strong> sin revisar a <strong>✓</strong> coincide, <strong>×</strong> descartado y volver a empezar.</p>
+    <div class="cuadriculas"></div>
+  </section>
+  <hr>
+  <section>
+    <h2>Tu acusación</h2>
+    <form>
+      <div class="campos"></div>
+      <div class="viz-row">
+        <button class="btn btn-primary" type="submit">Comprobar</button>
+        <button class="btn btn-ghost" type="button" data-replay>Reiniciar partida</button>
+      </div>
+    </form>
+    <p aria-live="polite" class="resultado"></p>
+  </section>
+  <p class="text-small text-muted">Adaptación del caso introductorio de <cite>Murdle</cite>, de G. T. Karber.</p>
+</div>
+<style>
+  #misterio-campus { display: grid; gap: calc(var(--font-size-base) * 1.3); }
+  #misterio-campus header { padding-inline-end: min(90px, 20%); }
+  #misterio-campus h1, #misterio-campus h2 { margin-bottom: calc(var(--font-size-base) * .5); }
+  #misterio-campus li + li { margin-top: .35em; }
+  #misterio-campus ul, #misterio-campus ol { padding-inline-start: 1.4em; }
+  #misterio-campus hr { margin: 0; }
+  #misterio-campus .expediente, #misterio-campus .cuadriculas, #misterio-campus .campos {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 283px), 1fr));
+    gap: 1em;
+  }
+  #misterio-campus .cuadriculas, #misterio-campus .resultado { margin-top: .75em; }
+  #misterio-campus .campos { grid-template-columns: repeat(auto-fit, minmax(min(100%, 185px), 1fr)); }
+  #misterio-campus form { display: grid; gap: .75em; }
+  #misterio-campus table { table-layout: fixed; width: 100%; margin-bottom: 0; }
+  #misterio-campus caption { text-align: start; caption-side: top; color: var(--foreground); }
+  #misterio-campus th, #misterio-campus td { padding-inline: .15em; overflow-wrap: anywhere; }
+  #misterio-campus thead th, #misterio-campus td { text-align: center; }
+  #misterio-campus tbody th { width: 25%; }
+  #misterio-campus td > button { width: 100%; min-height: 44px; padding-inline: 0; }
+  #misterio-campus details p { margin-top: .4em; }
+</style>
+<script>
+(() => {
+  const root = document.getElementById('misterio-campus');
+  const people = ['Alcalde Miel', 'Decano Glauco', 'Rectora Toscana'];
+  const places = ['Estadio', 'Librería', 'Antigua sede'];
+  const objects = ['Lápiz afilado', 'Mochila pesada', 'Cordón de graduación'];
+  const groups = [
+    { label: '¿Quién?', names: people, short: ['Miel', 'Glauco', 'Toscana'] },
+    { label: '¿Dónde?', names: places, short: ['Estadio', 'Librería', 'Sede'] },
+    { label: '¿Con qué?', names: objects, short: ['Lápiz', 'Mochila', 'Cordón'] }
+  ];
+  const form = root.querySelector('form');
+  const result = root.querySelector('.resultado');
+  const buttons = [];
+  const states = [
+    { mark: '·', label: 'sin revisar' },
+    { mark: '✓', label: 'coincide' },
+    { mark: '×', label: 'descartado' }
+  ];
+  for (const [title, rows, columns] of [
+    ['Sospechosos y lugares', groups[0], groups[1]],
+    ['Sospechosos y objetos', groups[0], groups[2]],
+    ['Lugares y objetos', groups[1], groups[2]]
+  ]) {
+    const table = document.createElement('table');
+    table.className = 'table';
+    table.createCaption().textContent = title;
+    const heading = table.createTHead().insertRow();
+    const corner = document.createElement('td');
+    heading.append(corner);
+    for (const label of columns.short) {
+      const th = document.createElement('th');
+      th.scope = 'col';
+      th.textContent = label;
+      heading.append(th);
+    }
+    const body = table.createTBody();
+    rows.names.forEach((rowName, index) => {
+      const row = body.insertRow();
+      const th = document.createElement('th');
+      th.scope = 'row';
+      th.textContent = rows.short[index];
+      row.append(th);
+      for (const columnName of columns.names) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'btn';
+        let state = 0;
+        const show = () => {
+          button.textContent = states[state].mark;
+          button.setAttribute('aria-label', rowName + ' y ' + columnName + ', ' + states[state].label);
+          button.classList.toggle('btn-primary', state === 1);
+        };
+        button.addEventListener('click', () => {
+          state = (state + 1) % states.length;
+          show();
+        });
+        buttons.push(() => { state = 0; show(); });
+        show();
+        row.insertCell().append(button);
+      }
+    });
+    root.querySelector('.cuadriculas').append(table);
+  }
+  const fields = groups.map(({ label, names }) => {
+    const wrapper = document.createElement('label');
+    wrapper.className = 'form-label';
+    wrapper.textContent = label;
+    const select = document.createElement('select');
+    select.className = 'form-select';
+    select.required = true;
+    select.add(new Option('Elegí una opción', ''));
+    for (const name of names) select.add(new Option(name, name));
+    wrapper.append(select);
+    form.querySelector('.campos').append(wrapper);
+    return select;
+  });
+  form.addEventListener('submit', event => {
+    event.preventDefault();
+    const [person, place, object] = fields.map(field => field.value);
+    const solved = person === people[0] && place === places[2] && object === objects[2];
+    result.textContent = solved
+      ? '¡Caso resuelto! La pintura descascarada ubica el crimen en la antigua sede. Glauco estaba en el estadio con la mochila y Toscana llevaba el lápiz, que no podía estar en la sede. Así que allí estaba Miel, con el cordón que identifica la pista de los ojos avellana.'
+      : 'La acusación no encaja con las pistas. Revisá el lugar del hallazgo y cruzalo con tu cuadrícula.';
+  });
+  form.addEventListener('change', () => { result.textContent = ''; });
+  form.querySelector('[data-replay]').addEventListener('click', () => {
+    form.reset();
+    buttons.forEach(reset => reset());
+    root.querySelector('details').open = false;
+    result.textContent = 'Partida reiniciada.';
+  });
+})();
+</script>
+
+</main>
+</body>
+</html>
